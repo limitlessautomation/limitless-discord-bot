@@ -1324,6 +1324,7 @@ async function handleCompleteFormSubmission(interaction, userId, category, quest
     try {
       if (loadingMessage) {
         await loadingMessage.delete();
+        console.log('Successfully deleted loading message');
       }
     } catch (error) {
       // Silently ignore DiscordAPIError[10008] (Unknown Message) as it's expected behavior
