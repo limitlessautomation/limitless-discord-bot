@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
-import {
+import discord from 'discord.js';
+const {
   Client,
   GatewayIntentBits,
   Partials,
@@ -9,19 +10,19 @@ import {
   Role,
   Interaction,
   ChatInputCommandInteraction,
-} from 'discord.js';
-import express, { Express, Request, Response } from 'express';
+} = discord;
+import express from 'express';
 import { MongoClient, Db } from 'mongodb';
 
-import slashCommandHandler from './handlers/slashCommandHandler';
+import slashCommandHandler from './handlers/slashCommandHandler.js';
 
-import sendRules from './commands/sendRules';
-import sendIntakeForm from './commands/sendIntakeForm';
+import sendRules from './commands/sendRules.js';
+import sendIntakeForm from './commands/sendIntakeForm.js';
 
-import guildMemberAdd from './events/guildMemberAdd';
-import messageReactionAdd from './events/messageReactionAdd';
+import guildMemberAdd from './events/guildMemberAdd.js';
+import messageReactionAdd from './events/messageReactionAdd.js';
 
-const app: Express = express();
+const app = express();
 const apiPort = process.env.BOT_API_PORT || 4000;
 
 const INTENTS = [
@@ -40,7 +41,7 @@ const client = new Client({
   partials: PARTIALS,
 });
 
-const mongoUri: string = process.env.MONGODB_URI!;
+const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
   throw new Error('Missing MONGODB_URI in environment variables.');
 }

@@ -1,8 +1,12 @@
-// 🟢 handlers/slashCommandHandler.ts
+// 🟢 handlers/slashCommandHandler.js
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import {
+import { fileURLToPath, pathToFileURL } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import discord from 'discord.js';
+const {
   Client,
   Collection,
   Interaction,
@@ -21,26 +25,18 @@ import {
   ButtonInteraction,
   MessageComponentInteraction,
   MessageFlags
-} from 'discord.js';
-import { questions, categoryOrder } from '../data/questions';
-import { createButtonRows } from '../slashCommands/getform';
-import { activeFormMessages, completedUsers, initialSelectedOptions } from './formState';
-import { QuestionCategory, FormQuestion, FormOption } from '../data/types';
-import GoogleAppsScriptService, { FormResponseData } from '../services/googleAppsScriptService';
+} = discord;
+import { questions, categoryOrder } from '../data/questions.js';
+import { createButtonRows } from '../slashCommands/getform.js';
+import { activeFormMessages, completedUsers, initialSelectedOptions } from './formState.js';
+import GoogleAppsScriptService from '../services/googleAppsScriptService.js';
 
 
 // Store user form progress
-const userFormProgress = new Map<string, {
-  selectedGoals: string[];
-  currentCategoryIndex: number;
-  currentQuestionIndex: number;
-  responses: Map<string, string[]>;
-  selectedOptions: Set<string>; // For multi-select questions
-  currentMessageId?: string; // Store the current message ID for navigation
-}>();
+const userFormProgress = new Map();
 
 // Function to start section-by-section form flow
-async function startSectionBySectionFlow(interaction: ButtonInteraction, selectedGoals: string[]) {
+async function startSectionBySectionFlow(interaction, selectedGoals) {
   const userId = interaction.user.id;
   
   // Initialize user progress
@@ -57,7 +53,7 @@ async function startSectionBySectionFlow(interaction: ButtonInteraction, selecte
 }
 
 // Function to show a category section with its questions
-async function showCategorySection(interaction: ButtonInteraction, userId: string) {
+async function showCategorySection(interaction, userId) {
   const userProgress = userFormProgress.get(userId);
   if (!userProgress) return;
   
@@ -100,7 +96,7 @@ async function showCategorySection(interaction: ButtonInteraction, userId: strin
 }
 
 // Function to check if this is the last question in the entire form
-async function checkIfLastQuestion(userId: string, currentCategory: string, currentQuestionIndex: number): Promise<boolean> {
+async function checkIfLastQuestion(userId, currentCategory, currentQuestionIndex) {
   const userProgress = userFormProgress.get(userId);
   if (!userProgress) return false;
   
@@ -121,7 +117,7 @@ async function checkIfLastQuestion(userId: string, currentCategory: string, curr
 }
 
 // Function to show a specific question with proper handling for single/multiple selection
-async function showQuestion(interaction: ButtonInteraction, userId: string, category: string, questionIndex: number) {
+async function showQuestion(interaction, userId, category, questionIndex) {
   const userProgress = userFormProgress.get(userId);
   if (!userProgress) return;
   
@@ -142,7 +138,7 @@ async function showQuestion(interaction: ButtonInteraction, userId: string, cate
   const buttonRows = createQuestionButtonRows(currentQuestion, category, userProgress.selectedOptions);
   
   // Add navigation buttons based on question type
-  const actionRow = new ActionRowBuilder<ButtonBuilder>();
+  const actionRow = new ActionRowBuilder();
   
   if (currentQuestion.questionType === 'multiSelectButton') {
     // Check if this is the last question in the entire form
@@ -180,8 +176,8 @@ async function showQuestion(interaction: ButtonInteraction, userId: string, cate
 }
 
 // Function to create button rows for questions
-function createQuestionButtonRows(question: FormQuestion, category: string, selectedOptions?: Set<string>): ActionRowBuilder<ButtonBuilder>[] {
-  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+function createQuestionButtonRows(question, category, selectedOptions) {
+  const rows = [];
   const maxButtonsPerRow = 5; // Discord allows 5 buttons per row
   const maxTotalRows = 4; // Leave room for the submit/continue button (Discord limit is 5 total)
   
@@ -195,10 +191,10 @@ function createQuestionButtonRows(question: FormQuestion, category: string, sele
     
     // Create rows with limited options
     for (let i = 0; i < limitedOptions.length; i += maxButtonsPerRow) {
-      const row = new ActionRowBuilder<ButtonBuilder>();
+      const row = new ActionRowBuilder();
       const chunk = limitedOptions.slice(i, i + maxButtonsPerRow);
       
-      chunk.forEach((option: FormOption) => {
+      chunk.forEach((option) => {
         const isSelected = selectedOptions?.has(option.value);
         const button = new ButtonBuilder()
           .setCustomId(`question_answer_${category}_${question.id}_${option.value}`)
@@ -227,7 +223,7 @@ function createQuestionButtonRows(question: FormQuestion, category: string, sele
       );
     } else if (rows.length < maxTotalRows) {
       // Create a new row for "More Options" if needed
-      const moreOptionsRow = new ActionRowBuilder<ButtonBuilder>();
+      const moreOptionsRow = new ActionRowBuilder();
       moreOptionsRow.addComponents(
         new ButtonBuilder()
           .setCustomId(`more_options_${category}_${question.id}`)
@@ -243,10 +239,10 @@ function createQuestionButtonRows(question: FormQuestion, category: string, sele
   
   // Normal case: create all rows within the limit
   for (let i = 0; i < question.options.length; i += maxButtonsPerRow) {
-    const row = new ActionRowBuilder<ButtonBuilder>();
+    const row = new ActionRowBuilder();
     const chunk = question.options.slice(i, i + maxButtonsPerRow);
     
-    chunk.forEach((option: FormOption) => {
+    chunk.forEach((option) => {
       const isSelected = selectedOptions?.has(option.value);
       const button = new ButtonBuilder()
         .setCustomId(`question_answer_${category}_${question.id}_${option.value}`)
@@ -267,8 +263,8 @@ function createQuestionButtonRows(question: FormQuestion, category: string, sele
 }
 
 // Function to get category title
-function getCategoryTitle(category: string): string {
-  const titles: Record<string, string> = {
+function getCategoryTitle(category) {
+  const titles = {
     'best-version': '🌟 Personal Growth',
     'physical-health': '🏃‍♂️ Physical Health',
     'mental-health': '🧠 Mental Wellbeing',
@@ -285,12 +281,12 @@ function getCategoryTitle(category: string): string {
 }
 
 // Function to show form completion
-async function showFormCompletion(interaction: ButtonInteraction, userId: string) {
+async function showFormCompletion(interaction, userId) {
   const userProgress = userFormProgress.get(userId);
   if (!userProgress) return;
   
   // Collect all corresponding roles from the user's form responses
-  const rolesToAssign: string[] = [];
+  const rolesToAssign = [];
   
   try {
     // 1. Collect roles from initial goals
@@ -303,7 +299,7 @@ async function showFormCompletion(interaction: ButtonInteraction, userId: string
     
     // 2. Collect roles from secondary question responses
     for (const [category, responses] of Object.entries(userProgress.responses)) {
-      const categoryQuestions = questions[category as keyof typeof questions];
+      const categoryQuestions = questions[category];
       if (categoryQuestions && Array.isArray(categoryQuestions)) {
         for (const question of categoryQuestions) {
           const questionResponses = responses[question.id];
@@ -326,7 +322,7 @@ async function showFormCompletion(interaction: ButtonInteraction, userId: string
     
     // Handle role assignment using RoleService
     if (uniqueRoles.length > 0 && interaction.guildId) {
-      const { RoleService } = await import('../services/roleService');
+      const { RoleService } = await import('../services/roleService.js');
       const guild = interaction.client.guilds.cache.get(interaction.guildId);
       const member = guild?.members.cache.get(userId);
       
@@ -359,29 +355,16 @@ async function showFormCompletion(interaction: ButtonInteraction, userId: string
   });
 }
 
-// Define a new type for our Command objects
-interface Command {
-  data: any;
-  execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-}
-
-// Extend the Client interface to include commands property
-declare module 'discord.js' {
-  interface Client {
-    commands: Collection<string, Command>;
-  }
-}
-
-export default async (client: Client) => {
+export default async (client) => {
   // Create a Collection to store the bot's commands.
-  client.commands = new Collection<string, Command>(); // 🟢
+  client.commands = new Collection(); // 🟢
 
   const commandsPath = path.join(__dirname, '..', 'slashCommands');
-  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts') || file.endsWith('.js')); // 🟢
+  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.js')); // 🟢
 
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
+    const command = await import(pathToFileURL(filePath).href);
 
     if ('data' in command && 'execute' in command) {
       // 🟢
@@ -393,7 +376,7 @@ export default async (client: Client) => {
   console.log(`Loaded ${commandFiles.length} slash commands.`);
 
   // 🟢 The `interactionCreate` event listener.
-  client.on('interactionCreate', async (interaction: Interaction) => {
+  client.on('interactionCreate', async (interaction) => {
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
 
@@ -453,7 +436,7 @@ export default async (client: Client) => {
         // Get or initialize user's selected options
         let userSelectedOptions = initialSelectedOptions.get(userId);
         if (!userSelectedOptions) {
-          userSelectedOptions = new Set<string>(['best_version']); // Default selection
+          userSelectedOptions = new Set(['best_version']); // Default selection
           initialSelectedOptions.set(userId, userSelectedOptions);
         }
         
@@ -469,7 +452,7 @@ export default async (client: Client) => {
         const updatedButtonRows = createButtonRows(initialQuestion, 'initial_goal', userSelectedOptions);
         
         // Recreate the action row with submit and delete buttons
-        const updatedActionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        const updatedActionRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId('submit_initial_goals')
             .setLabel('Continue')
@@ -479,7 +462,7 @@ export default async (client: Client) => {
         );
         
         // Create value to label map from the initial question options
-        const valueToLabelMap: Record<string, string> = {};
+        const valueToLabelMap = {};
         initialQuestion.options.forEach(option => {
           valueToLabelMap[option.value] = option.label;
         });
@@ -559,7 +542,7 @@ export default async (client: Client) => {
 
         // Get selected goals from the initialSelectedOptions map
         const userSelectedOptions = initialSelectedOptions.get(userId);
-        const selectedGoals: string[] = userSelectedOptions ? Array.from(userSelectedOptions) : [];
+        const selectedGoals = userSelectedOptions ? Array.from(userSelectedOptions) : [];
 
         if (selectedGoals.length === 0) {
           try {
@@ -590,7 +573,7 @@ export default async (client: Client) => {
 
         // Create value to label map from the initial question options
         const initialQuestion = questions.initial[0];
-        const valueToLabelMap: Record<string, string> = {};
+        const valueToLabelMap = {};
         initialQuestion.options.forEach(option => {
           valueToLabelMap[option.value] = option.label;
         });
@@ -792,7 +775,7 @@ export default async (client: Client) => {
 };
 
 // Function to handle question answer button clicks
-async function handleQuestionAnswer(interaction: ButtonInteraction) {
+async function handleQuestionAnswer(interaction) {
   try {
     await interaction.deferUpdate();
     
@@ -882,7 +865,7 @@ async function handleQuestionAnswer(interaction: ButtonInteraction) {
       // Create updated buttons and action row
       const updatedButtonRows = createQuestionButtonRows(currentQuestion, category, userProgress.selectedOptions);
       const isLastQuestion = await checkIfLastQuestion(userId, category, userProgress.currentQuestionIndex);
-      const updatedActionRow = new ActionRowBuilder<ButtonBuilder>()
+      const updatedActionRow = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId(`submit_multi_select_${category}_${userProgress.currentQuestionIndex}`)
@@ -931,7 +914,7 @@ async function handleQuestionAnswer(interaction: ButtonInteraction) {
 }
 
 // Function to handle multi-select submission
-async function handleMultiSelectSubmit(interaction: ButtonInteraction) {
+async function handleMultiSelectSubmit(interaction) {
   try {
     await interaction.deferUpdate();
     
@@ -960,7 +943,7 @@ async function handleMultiSelectSubmit(interaction: ButtonInteraction) {
       // Create updated buttons and action row to keep the question interactive
       const updatedButtonRows = createQuestionButtonRows(currentQuestion, category, userProgress.selectedOptions);
       const isLastQuestion = await checkIfLastQuestion(userId, category, questionIndex);
-      const updatedActionRow = new ActionRowBuilder<ButtonBuilder>()
+      const updatedActionRow = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId(`submit_multi_select_${category}_${questionIndex}`)
@@ -980,7 +963,7 @@ async function handleMultiSelectSubmit(interaction: ButtonInteraction) {
       // Create updated buttons and action row to keep the question interactive
       const updatedButtonRows = createQuestionButtonRows(currentQuestion, category, userProgress.selectedOptions);
       const isLastQuestion = await checkIfLastQuestion(userId, category, questionIndex);
-      const updatedActionRow = new ActionRowBuilder<ButtonBuilder>()
+      const updatedActionRow = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
             .setCustomId(`submit_multi_select_${category}_${questionIndex}`)
@@ -1041,7 +1024,7 @@ async function handleMultiSelectSubmit(interaction: ButtonInteraction) {
 }
 
 // Function to handle "More Options" button click
-async function handleMoreOptions(interaction: ButtonInteraction) {
+async function handleMoreOptions(interaction) {
   try {
     const userId = interaction.user.id;
     const userProgress = userFormProgress.get(userId);
@@ -1072,12 +1055,12 @@ async function handleMoreOptions(interaction: ButtonInteraction) {
     const remainingOptions = currentQuestion.options.slice(maxOptions);
     
     // Create button rows for the remaining options
-    const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+    const rows = [];
     for (let i = 0; i < remainingOptions.length; i += maxButtonsPerRow) {
-      const row = new ActionRowBuilder<ButtonBuilder>();
+      const row = new ActionRowBuilder();
       const chunk = remainingOptions.slice(i, i + maxButtonsPerRow);
       
-      chunk.forEach((option: FormOption) => {
+      chunk.forEach((option) => {
         const isSelected = userProgress.selectedOptions?.has(option.value);
         const button = new ButtonBuilder()
           .setCustomId(`question_answer_${category}_${questionId}_${option.value}`)
@@ -1095,7 +1078,7 @@ async function handleMoreOptions(interaction: ButtonInteraction) {
     }
     
     // Add a "Back" button
-    const backRow = new ActionRowBuilder<ButtonBuilder>();
+    const backRow = new ActionRowBuilder();
     backRow.addComponents(
       new ButtonBuilder()
         .setCustomId(`back_to_main_${category}_${questionId}`)
@@ -1120,7 +1103,7 @@ async function handleMoreOptions(interaction: ButtonInteraction) {
 }
 
 // Function to handle "Back to Main Options" button click
-async function handleBackToMain(interaction: ButtonInteraction) {
+async function handleBackToMain(interaction) {
   try {
     const userId = interaction.user.id;
     const userProgress = userFormProgress.get(userId);
@@ -1148,7 +1131,7 @@ async function handleBackToMain(interaction: ButtonInteraction) {
     const buttonRows = createQuestionButtonRows(currentQuestion, category, userProgress.selectedOptions);
     
     // Add navigation buttons based on question type
-    const actionRow = new ActionRowBuilder<ButtonBuilder>();
+    const actionRow = new ActionRowBuilder();
     
     if (currentQuestion.questionType === 'multiSelectButton') {
       // Check if this is the last question in the entire form
@@ -1178,7 +1161,7 @@ async function handleBackToMain(interaction: ButtonInteraction) {
     await interaction.message.delete();
     
     // Find the original message and update it
-    const originalMessage = await interaction.channel?.messages.fetch(userProgress.currentMessageId!);
+    const originalMessage = await interaction.channel?.messages.fetch(userProgress.currentMessageId);
     if (originalMessage) {
       await originalMessage.edit({
         content,
@@ -1196,7 +1179,7 @@ async function handleBackToMain(interaction: ButtonInteraction) {
 }
 
 // Function to handle complete form submission
-async function handleCompleteFormSubmission(interaction: ButtonInteraction, userId: string, category: string, questionIndex: number) {
+async function handleCompleteFormSubmission(interaction, userId, category, questionIndex) {
   try {
     const userProgress = userFormProgress.get(userId);
     if (!userProgress) return;
@@ -1204,7 +1187,7 @@ async function handleCompleteFormSubmission(interaction: ButtonInteraction, user
     console.log(`User ${interaction.user.tag} completed the intake form`);
     
     // Prepare form data for Google Sheets
-    const formData: FormResponseData = {
+    const formData = {
       userId: userId,
       username: interaction.user.tag,
       timestamp: new Date(),
@@ -1254,7 +1237,7 @@ async function handleCompleteFormSubmission(interaction: ButtonInteraction, user
     }
 
     // Collect all corresponding roles from the user's form responses
-    const rolesToAssign: string[] = [];
+    const rolesToAssign = [];
     
     try {
       // 1. Collect roles from initial goals
@@ -1267,7 +1250,7 @@ async function handleCompleteFormSubmission(interaction: ButtonInteraction, user
       
       // 2. Collect roles from secondary question responses
       for (const [category, responses] of Object.entries(userProgress.responses)) {
-        const categoryQuestions = questions[category as keyof typeof questions];
+        const categoryQuestions = questions[category];
         if (categoryQuestions && Array.isArray(categoryQuestions)) {
           for (const question of categoryQuestions) {
             const questionResponses = responses[question.id];
@@ -1290,7 +1273,7 @@ async function handleCompleteFormSubmission(interaction: ButtonInteraction, user
       
       // Handle role assignment using RoleService
       if (uniqueRoles.length > 0 && interaction.guildId) {
-        const { RoleService } = await import('../services/roleService');
+        const { RoleService } = await import('../services/roleService.js');
         const guild = interaction.client.guilds.cache.get(interaction.guildId);
         if (guild) {
           const member = guild.members.cache.get(interaction.user.id);

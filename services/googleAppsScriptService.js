@@ -1,27 +1,7 @@
 import axios from 'axios';
 
-export interface FormResponseData {
-  userId: string;
-  username: string;
-  timestamp: Date;
-  goals: string[];
-  responses: {
-    [category: string]: {
-      [questionId: string]: string[];
-    };
-  };
-}
-
-export interface GoogleAppsScriptConfig {
-  scriptUrl: string;
-  timeout?: number;
-  retries?: number;
-}
-
 class GoogleAppsScriptService {
-  private config: GoogleAppsScriptConfig;
-
-  constructor(config: GoogleAppsScriptConfig) {
+  constructor(config) {
     this.config = {
       timeout: 10000, // 10 seconds default timeout
       retries: 3, // 3 retries default
@@ -32,16 +12,16 @@ class GoogleAppsScriptService {
   /**
    * Send form response data to Google Apps Script
    */
-  async sendFormResponse(data: FormResponseData): Promise<void> {
+  async sendFormResponse(data) {
     const { scriptUrl, timeout, retries } = this.config;
 
     if (!scriptUrl) {
       throw new Error('Google Apps Script URL is not configured');
     }
 
-    let lastError: Error | null = null;
+    let lastError = null;
 
-    for (let attempt = 1; attempt <= retries!; attempt++) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`Attempting to send form data to Google Apps Script (attempt ${attempt}/${retries})`);
 
@@ -64,7 +44,7 @@ class GoogleAppsScriptService {
 
         return; // Success, exit the retry loop
       } catch (error) {
-        lastError = error as Error;
+        lastError = error;
         console.error(`Attempt ${attempt} failed:`, error);
 
         if (attempt === retries) {
@@ -84,7 +64,7 @@ class GoogleAppsScriptService {
   /**
    * Test the connection to Google Apps Script
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection() {
     try {
       const { scriptUrl, timeout } = this.config;
 
@@ -119,8 +99,8 @@ class GoogleAppsScriptService {
   /**
    * Format form responses for Google Sheets
    */
-  static formatForGoogleSheets(data: FormResponseData): any[] {
-    const rows: any[] = [];
+  static formatForGoogleSheets(data) {
+    const rows = [];
 
     // Add main row with user info and goals
     rows.push({
@@ -138,8 +118,8 @@ class GoogleAppsScriptService {
   /**
    * Get category columns for Google Sheets
    */
-  private static getCategoryColumns(responses: FormResponseData['responses']): { [key: string]: string } {
-    const categoryColumns: { [key: string]: string } = {};
+  static getCategoryColumns(responses) {
+    const categoryColumns = {};
 
     Object.entries(responses).forEach(([category, categoryResponses]) => {
       Object.entries(categoryResponses).forEach(([questionId, answers]) => {

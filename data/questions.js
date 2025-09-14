@@ -1,6 +1,4 @@
-import { FormQuestions, QuestionCategory } from './types';
-
-export const questions: FormQuestions = {
+export const questions = {
   initial: [
     {
       id: 'main_goals',
@@ -1487,7 +1485,7 @@ export const questions: FormQuestions = {
           value: 'get_started',
         },
         {
-          label: 'I haven’t been focused on this',
+          label: "I haven't been focused on this",
           value: 'not_focused_physical',
         },
         {
@@ -1784,7 +1782,7 @@ export const questions: FormQuestions = {
   ],
 };
 
-export const categoryOrder: QuestionCategory[] = [
+export const categoryOrder = [
   {
     triggerValue: 'finding_a_job',
     category: 'job-seeker',
@@ -1799,7 +1797,7 @@ export const categoryOrder: QuestionCategory[] = [
   },
   {
     triggerValue: 'programming',
-    category: 'programming',
+    category: 'software-development',
   },
   {
     triggerValue: 'getting_advice',

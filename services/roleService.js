@@ -1,11 +1,5 @@
-import { Guild, GuildMember } from 'discord.js';
-
-export interface RoleActionResult {
-  success: boolean;
-  addedRoles: string[];
-  removedRoles: string[];
-  errors: string[];
-}
+import discord from 'discord.js';
+const { Guild, GuildMember } = discord;
 
 export class RoleService {
   /**
@@ -13,8 +7,8 @@ export class RoleService {
    * @param member The guild member who joined
    * @returns RoleActionResult with details of the operation
    */
-  static async handleUserJoin(member: GuildMember): Promise<RoleActionResult> {
-    const result: RoleActionResult = {
+  static async handleUserJoin(member) {
+    const result = {
       success: true,
       addedRoles: [],
       removedRoles: [],
@@ -51,8 +45,8 @@ export class RoleService {
    * @param member The guild member who accepted rules
    * @returns RoleActionResult with details of the operation
    */
-  static async handleRulesAcceptance(member: GuildMember): Promise<RoleActionResult> {
-    const result: RoleActionResult = {
+  static async handleRulesAcceptance(member) {
+    const result = {
       success: true,
       addedRoles: [],
       removedRoles: [],
@@ -98,8 +92,8 @@ export class RoleService {
    * @param selectedRoles Array of role names based on form responses
    * @returns RoleActionResult with details of the operation
    */
-  static async handleFormCompletion(member: GuildMember, selectedRoles: string[]): Promise<RoleActionResult> {
-    const result: RoleActionResult = {
+  static async handleFormCompletion(member, selectedRoles) {
+    const result = {
       success: true,
       addedRoles: [],
       removedRoles: [],
@@ -162,7 +156,7 @@ export class RoleService {
    * @param guild The guild to check
    * @returns Object mapping role names to role IDs
    */
-  static getAvailableRoles(guild: Guild): Record<string, string> {
+  static getAvailableRoles(guild) {
     const expectedRoles = [
       'Pending',
       'Incoming',
@@ -180,7 +174,7 @@ export class RoleService {
       'Job Seekers'
     ];
 
-    const availableRoles: Record<string, string> = {};
+    const availableRoles = {};
     
     expectedRoles.forEach(roleName => {
       const role = guild.roles.cache.find(r => r.name === roleName);
@@ -198,8 +192,8 @@ export class RoleService {
    * @param roleNames Array of role names to check
    * @returns Object indicating which roles the user has
    */
-  static hasRoles(member: GuildMember, roleNames: string[]): Record<string, boolean> {
-    const result: Record<string, boolean> = {};
+  static hasRoles(member, roleNames) {
+    const result = {};
     
     roleNames.forEach(roleName => {
       const role = member.guild.roles.cache.find(r => r.name === roleName);

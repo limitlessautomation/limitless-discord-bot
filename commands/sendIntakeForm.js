@@ -1,5 +1,6 @@
 // 🟢 This file handles the command to post the intake form prompt in the channel.
-import { Client, Message, TextChannel, PermissionsBitField } from 'discord.js';
+import discord from 'discord.js';
+const { Client, Message, TextChannel, PermissionsBitField } = discord;
 
 const intakeMessage = `
 > ### Ready to start your journey? 🚀
@@ -9,8 +10,8 @@ const intakeMessage = `
 > **To create your private, personal form, type \`/getform\` in this channel!** ✍️
 `;
 
-export default (client: Client) => {
-  client.on('messageCreate', async (message: Message) => {
+export default (client) => {
+  client.on('messageCreate', async (message) => {
     // 🟢 Check if the message starts with the command and the author is not a bot.
     if (message.author.bot) return;
 
@@ -24,7 +25,7 @@ export default (client: Client) => {
         }
         
         // 🟢 We will get the channel where we want to send the message.
-        const intakeChannel = client.channels.cache.get(process.env.INTAKE_CHANNEL_ID) as TextChannel;
+        const intakeChannel = client.channels.cache.get(process.env.INTAKE_CHANNEL_ID);
         
         // 🟢 Check if the channel exists and is a text channel
         if (!intakeChannel || !(intakeChannel instanceof TextChannel)) {

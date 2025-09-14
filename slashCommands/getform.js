@@ -1,5 +1,6 @@
 // 🟢 This file handles the '/getform' command to provide a dynamic intake form.
-import {
+import discord from 'discord.js';
+const {
   Client,
   ChatInputCommandInteraction,
   SlashCommandBuilder,
@@ -12,10 +13,9 @@ import {
   ComponentType,
   EmbedBuilder,
   MessageFlags,
-} from 'discord.js';
-import { questions, categoryOrder } from '../data/questions';
-import { FormQuestion, FormOption } from '../data/types';
-import { activeFormMessages, completedUsers, initialSelectedOptions, initializeFormTracking } from '../handlers/formState';
+} = discord;
+import { questions, categoryOrder } from '../data/questions.js';
+import { activeFormMessages, completedUsers, initialSelectedOptions, initializeFormTracking } from '../handlers/formState.js';
 
 
 // Initialize the tracking
@@ -27,15 +27,15 @@ const data = new SlashCommandBuilder()
   .setDescription('Opens an intake form to get to know you better.');
 
 // Helper function to create buttons for multiple choice questions
-export function createButtonRows(question: FormQuestion, customIdPrefix: string, selectedOptions?: Set<string>): ActionRowBuilder<ButtonBuilder>[] {
-  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+export function createButtonRows(question, customIdPrefix, selectedOptions) {
+  const rows = [];
   const maxButtonsPerRow = 5;
 
   for (let i = 0; i < question.options.length; i += maxButtonsPerRow) {
-    const row = new ActionRowBuilder<ButtonBuilder>();
+    const row = new ActionRowBuilder();
     const chunk = question.options.slice(i, i + maxButtonsPerRow);
 
-    chunk.forEach((option: FormOption, index: number) => {
+    chunk.forEach((option, index) => {
       const isSelected = selectedOptions?.has(option.value) || (customIdPrefix === 'initial_goal' && option.value === 'best_version');
       const button = new ButtonBuilder()
         .setCustomId(`${customIdPrefix}_${option.value}`)
@@ -57,7 +57,7 @@ export function createButtonRows(question: FormQuestion, customIdPrefix: string,
 }
 
 // Helper function to create a modal with a question
-function createQuestionModal(question: FormQuestion, customId: string): ModalBuilder {
+function createQuestionModal(question, customId) {
   const modal = new ModalBuilder().setCustomId(customId).setTitle('Intake Form - Get to Know You');
 
   // For text input questions, use text input
@@ -68,14 +68,14 @@ function createQuestionModal(question: FormQuestion, customId: string): ModalBui
     .setPlaceholder('Please provide your answer...')
     .setRequired(true);
 
-  const row = new ActionRowBuilder<TextInputBuilder>().addComponents(input);
+  const row = new ActionRowBuilder().addComponents(input);
   modal.addComponents(row);
 
   return modal;
 }
 
 // The execute function handles the command logic
-const execute = async (interaction: ChatInputCommandInteraction) => {
+const execute = async (interaction) => {
   try {
     const userId = interaction.user.id;
 
@@ -101,14 +101,14 @@ const execute = async (interaction: ChatInputCommandInteraction) => {
     const initialQuestion = questions['initial'][0];
 
     // Initialize selected options for this user (pre-select 'best_version' as default)
-    const userSelectedOptions = new Set<string>(['best_version']);
+    const userSelectedOptions = new Set(['best_version']);
     initialSelectedOptions.set(userId, userSelectedOptions);
 
     // Create buttons for the initial question
     const buttonRows = createButtonRows(initialQuestion, 'initial_goal', userSelectedOptions);
 
     // Add submit and delete buttons
-    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const actionRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('submit_initial_goals')
         .setLabel('Continue')

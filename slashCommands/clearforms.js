@@ -1,5 +1,6 @@
 // 🟢 This file handles the '/clearforms' command to delete existing form messages
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
+import discord from 'discord.js';
+const { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = discord;
 
 // The command data defines how the slash command will appear in Discord.
 const data = new SlashCommandBuilder()
@@ -8,7 +9,7 @@ const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 // The execute function handles the command logic
-const execute = async (interaction: ChatInputCommandInteraction) => {
+const execute = async (interaction) => {
   try {
     // Check if user has admin permissions
     if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {

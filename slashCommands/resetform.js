@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } from 'discord.js';
-import { completedUsers, activeFormMessages } from '../handlers/formState';
+import discord from 'discord.js';
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } = discord;
+import { completedUsers, activeFormMessages } from '../handlers/formState.js';
 
 export const data = new SlashCommandBuilder()
     .setName('resetform')
@@ -10,7 +11,7 @@ export const data = new SlashCommandBuilder()
             .setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
-export async function execute(interaction: any) {
+export async function execute(interaction) {
     try {
         // Check if user has admin permissions
         if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
