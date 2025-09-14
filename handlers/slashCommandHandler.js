@@ -39,13 +39,26 @@ const userFormProgress = new Map();
 async function startSectionBySectionFlow(interaction, selectedGoals) {
   const userId = interaction.user.id;
   
+  // Show loading message and store reference to delete it later
+  let loadingMessage;
+  try {
+    loadingMessage = await interaction.followUp({
+      content: '⏳ **Submitting your form...**\n\nPlease wait while we process your responses and assign your roles.',
+      components: [],
+      flags: MessageFlags.Ephemeral,
+    });
+  } catch (error) {
+    console.error('Failed to show submitting message:', error);
+  }
+  
   // Initialize user progress
   userFormProgress.set(userId, {
     selectedGoals,
     currentCategoryIndex: 0,
     currentQuestionIndex: 0,
     responses: new Map(),
-    selectedOptions: new Set()
+    selectedOptions: new Set(),
+    loadingMessage
   });
   
   // Show first category
@@ -272,7 +285,7 @@ function getCategoryTitle(category) {
     'mentoring': '🤝 Mentoring',
     'networking': '🌐 Networking',
     'project-advice': '💡 Project Advice',
-    'software-development': '💻 Software Development',
+    'programming': '💻 Programming',
     'new-skills': '📚 Learning New Skills',
     'job-seeker': '🎯 Job Search'
   };
@@ -347,11 +360,26 @@ async function showFormCompletion(interaction, userId) {
   }
   
   // Clean up user progress
+  const loadingMessage = userProgress.loadingMessage;
   userFormProgress.delete(userId);
   
-  await interaction.followUp({
-    content: '🎉 **Thank you for completing the form!**\n\nWe have recorded all your responses and will use this information to help you better. You can now participate in discussions and get personalized support based on your goals and interests.',
-    flags: MessageFlags.Ephemeral
+  // Delete the loading message before showing success message
+  try {
+    if (loadingMessage) {
+      await loadingMessage.delete();
+    }
+  } catch (error) {
+    // Silently ignore DiscordAPIError[10008] (Unknown Message) as it's expected behavior
+    // when the ephemeral message expires or is already deleted
+    if (error.code !== 10008) {
+      console.warn('Could not delete loading message:', error);
+    }
+  }
+
+  // Send completion message
+  await interaction.editReply({
+    content: `🎉 **Welcome to the Limitless Freedom Blueprint!**\n\nThank you for completing the intake form! Your responses have been recorded and our team will review them shortly.\n\n**What happens next:**\n• Your roles have been assigned based on your goals and interests\n\n**📋 Stay Active & Earn the Elite Role!**\nTo maintain full access to our community and earn the **Elite** role, participate regularly:\n\n**Weekly Requirements (5 total interactions):**\n• **2 new questions or comments** - Share your thoughts, ask questions, or start discussions\n• **3 responses to others** - Help fellow members by answering questions or providing feedback\n\n**Role Progression:**\n• **Verified Role** - Starting role (what you have now)\n• **Elite Role** - Earned by meeting weekly activity requirements\n\n**Important:** If you don't participate for **7 days**, you'll move back to the Verified role. Stay engaged to keep your Elite status!\n\nIf you have any questions, feel free to ask in the help channels or reach out to our moderators. We're excited to have you join our community!`,
+    components: [],
   });
 }
 
@@ -815,12 +843,18 @@ async function handleQuestionAnswer(interaction) {
     } else if (rest.startsWith('business-owner_')) {
       category = 'business-owner';
       remaining = rest.substring('business-owner_'.length);
-    } else if (rest.startsWith('software-development_')) {
-      category = 'software-development';
-      remaining = rest.substring('software-development_'.length);
+    } else if (rest.startsWith('programming_')) {
+      category = 'programming';
+      remaining = rest.substring('programming_'.length);
     } else if (rest.startsWith('job-seeker_')) {
       category = 'job-seeker';
       remaining = rest.substring('job-seeker_'.length);
+    } else if (rest.startsWith('new-skills_')) {
+      category = 'new-skills';
+      remaining = rest.substring('new-skills_'.length);
+    } else if (rest.startsWith('product-development_')) {
+      category = 'product-development';
+      remaining = rest.substring('product-development_'.length);
     }
     
     console.log('DEBUG: category:', category);

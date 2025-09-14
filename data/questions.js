@@ -597,7 +597,7 @@ export const questions = {
       ],
     },
   ],
-  'software-development': [
+  'programming': [
     {
       id: 'programming_experience',
       label: "What's your current experience level with programming?",
@@ -1797,7 +1797,7 @@ export const categoryOrder = [
   },
   {
     triggerValue: 'programming',
-    category: 'software-development',
+    category: 'programming',
   },
   {
     triggerValue: 'getting_advice',

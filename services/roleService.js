@@ -161,7 +161,7 @@ export class RoleService {
       'Pending',
       'Incoming',
       'Verified',
-      'Active',
+      'Elite',
       'Self Improvement',
       'Physical Fitness',
       'Mental Health',
