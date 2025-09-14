@@ -701,11 +701,6 @@ export const questions = {
           corresponding_role: 'Ruby',
         },
         {
-          label: 'Rust',
-          value: 'rust',
-          corresponding_role: 'Rust',
-        },
-        {
           label: 'Swift',
           value: 'swift',
           corresponding_role: 'Swift',
