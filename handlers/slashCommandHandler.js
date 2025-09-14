@@ -118,11 +118,19 @@ async function checkIfLastQuestion(userId, currentCategory, currentQuestionIndex
 
 // Function to show a specific question with proper handling for single/multiple selection
 async function showQuestion(interaction, userId, category, questionIndex) {
+  console.log('DEBUG: showQuestion called with:', { category, questionIndex });
   const userProgress = userFormProgress.get(userId);
-  if (!userProgress) return;
+  if (!userProgress) {
+    console.log('DEBUG: No user progress found for userId:', userId);
+    return;
+  }
   
   const categoryQuestions = questions[category];
+  console.log('DEBUG: categoryQuestions:', categoryQuestions ? `Found ${categoryQuestions.length} questions` : 'Not found');
+  console.log('DEBUG: questionIndex:', questionIndex, 'categoryQuestions.length:', categoryQuestions?.length);
+  
   if (!categoryQuestions || questionIndex >= categoryQuestions.length) {
+    console.log('DEBUG: No more questions in category, moving to next category');
     // No more questions in this category, move to next category
     userProgress.currentCategoryIndex++;
     userProgress.currentQuestionIndex = 0;
@@ -132,10 +140,13 @@ async function showQuestion(interaction, userId, category, questionIndex) {
   }
   
   const currentQuestion = categoryQuestions[questionIndex];
+  console.log('DEBUG: currentQuestion:', currentQuestion);
   userProgress.currentQuestionIndex = questionIndex;
+  console.log('DEBUG: Set currentQuestionIndex to:', questionIndex);
   
   // Create buttons for the question
   const buttonRows = createQuestionButtonRows(currentQuestion, category, userProgress.selectedOptions);
+  console.log('DEBUG: Created button rows, count:', buttonRows.length);
   
   // Add navigation buttons based on question type
   const actionRow = new ActionRowBuilder();
@@ -165,12 +176,16 @@ async function showQuestion(interaction, userId, category, questionIndex) {
     content += `\n\n*Select all that apply, then click "${buttonText}".*`;
   }
   
+  console.log('DEBUG: About to send followUp message with content length:', content.length);
+  console.log('DEBUG: Question type:', currentQuestion.questionType);
+  
   const followUpMessage = await interaction.followUp({
     content,
     components: currentQuestion.questionType === 'multiSelectButton' ? [...buttonRows, actionRow] : buttonRows,
     flags: MessageFlags.Ephemeral
   });
   
+  console.log('DEBUG: FollowUp message sent, ID:', followUpMessage.id);
   // Store the message ID for navigation
   userProgress.currentMessageId = followUpMessage.id;
 }
@@ -557,12 +572,7 @@ export default async (client) => {
           return;
         }
 
-        // Mark user as completed
-        if (completedUsers) {
-          completedUsers.add(userId);
-        }
-
-        // Remove from active forms
+        // Remove from active forms temporarily (will be re-added when starting section-by-section flow)
         if (activeFormMessages) {
           activeFormMessages.delete(userId);
         }
@@ -902,6 +912,8 @@ async function handleQuestionAnswer(interaction) {
       const selectedLabel = selectedOption ? selectedOption.label : answerValue;
       
       console.log(`User ${interaction.user.tag} answered ${questionId}: ${answerValue}`);
+      console.log('DEBUG: About to show next question. Current index:', userProgress.currentQuestionIndex, 'Next index:', userProgress.currentQuestionIndex + 1);
+      console.log('DEBUG: Category:', category);
       
       // Update the current message to show the selected answer
       await interaction.editReply({
@@ -911,6 +923,7 @@ async function handleQuestionAnswer(interaction) {
       
       // Show next question below with a small delay
       setTimeout(async () => {
+        console.log('DEBUG: Calling showQuestion with:', { category, questionIndex: userProgress.currentQuestionIndex + 1 });
         await showQuestion(interaction, userId, category, userProgress.currentQuestionIndex + 1);
       }, 500);
     }
