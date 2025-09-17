@@ -1,4 +1,4 @@
-// 🟢 handlers/slashCommandHandler.js - CLEAN REFACTORED VERSION
+// 🟢 handlers/slashCommandHandler.js - CLEAN VERSION
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -317,27 +317,7 @@ async function sendErrorResponse(interaction, message) {
   }
 }
 
-// Legacy functions that are still called by old code - these just delegate to services
-async function startSectionBySectionFlow(interaction, selectedGoals) {
-  await formService.startFormFlow(interaction, selectedGoals);
-}
-
-async function showCategorySection(interaction, userId) {
-  await formService.showCategorySection(interaction, userId);
-}
-
-async function checkIfLastQuestion(userId, currentCategory, currentQuestionIndex) {
-  return questionHandler.isLastQuestion(userId, currentCategory, currentQuestionIndex);
-}
-
-async function showQuestion(interaction, userId, category, questionIndex) {
-  await formService.showQuestion(interaction, userId, category, questionIndex);
-}
-
-async function showFormCompletion(interaction, userId) {
-  await formService.showFormCompletion(interaction, userId);
-}
-
-async function handleCompleteFormSubmission(interaction, userId, category, questionIndex) {
-  await formService.handleCompleteFormSubmission(interaction, userId, category, questionIndex);
-}
+// Export functions for use by slash commands
+export { 
+  formService as startSectionBySectionFlow  // For backward compatibility
+};
