@@ -34,11 +34,16 @@ Breaking rules may result in warnings, mutes, kicks, or bans.
 `;
 
 export default (client) => {
+  console.log('🔧 sendRules command handler loaded');
+  
   client.on('messageCreate', async (message) => {
     // 🟢 Check if the message starts with the command prefix.
     if (message.author.bot) return;
+    
+    console.log('📝 Message received:', message.content);
 
     if (message.content.startsWith('!sendrules')) {
+      console.log('🎯 !sendrules command triggered by:', message.author.tag);
       // 🟢 Check if the user is an administrator or has the correct role.
       if (message.member && message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
         // 🟢 Get the channel where the message will be sent.

@@ -1,4 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { environment, isDev, isProd } from './config/environment.js';
+
+dotenv.config();
+
+// Log startup environment
+console.log(`🚀 Starting ${isDev() ? 'Development' : 'Production'} Bot...`);
 
 import discord from 'discord.js';
 const {
@@ -99,4 +105,4 @@ app.listen(apiPort, () => {
   console.log(`Bot API server listening on port ${apiPort}`);
 });
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+client.login(process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN);
