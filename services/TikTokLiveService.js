@@ -1,6 +1,6 @@
 import { TikTokLiveConnection, WebcastEvent, ControlEvent } from 'tiktok-live-connector';
 import { EmbedBuilder } from 'discord.js';
-import LiveStreamAnalytics from './LiveStreamAnalytics.js';
+import { LiveStreamAnalytics } from './LiveStreamAnalytics.js';
 
 export class TikTokLiveService {
   constructor(discordClient, tiktokIdentifier, announcementChannelId) {
