@@ -23,6 +23,14 @@ export const environment = {
     retries: parseInt(process.env.GOOGLE_APPS_SCRIPT_RETRIES || '3'),
   },
   
+  // TikTok Live configuration
+  tiktok: {
+    username: process.env.TIKTOK_USERNAME,
+    userId: process.env.TIKTOK_USER_ID,
+    // Doppler sets the appropriate channel ID for each environment
+    liveAnnouncementChannelId: process.env.LIVE_ANNOUNCEMENT_CHANNEL_ID,
+  },
+  
   // Logging level based on environment
   logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
 };

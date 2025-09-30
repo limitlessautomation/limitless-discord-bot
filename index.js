@@ -27,6 +27,7 @@ import sendIntakeForm from './commands/sendIntakeForm.js';
 
 import guildMemberAdd from './events/guildMemberAdd.js';
 import messageReactionAdd from './events/messageReactionAdd.js';
+import { TikTokLiveService } from './services/TikTokLiveService.js';
 
 const app = express();
 const apiPort = process.env.BOT_API_PORT || 4000;
@@ -53,6 +54,37 @@ if (!mongoUri) {
 }
 
 const mongoClient = new MongoClient(mongoUri);
+
+// Initialize TikTok Live Service
+let tiktokLiveService = null;
+const tiktokIdentifier = environment.tiktok.userId || environment.tiktok.username;
+const channelId = environment.tiktok.liveAnnouncementChannelId;
+
+if (tiktokIdentifier && channelId) {
+  try {
+    tiktokLiveService = new TikTokLiveService(
+      client,
+      tiktokIdentifier,
+      channelId
+    );
+    
+    const identifierType = environment.tiktok.userId ? 'User ID (recommended)' : 'Username';
+    const serverType = isDev() ? 'Test Server' : 'Main Server';
+    
+    console.log(`✅ TikTok Live Service initialized using ${identifierType}`);
+    console.log(`📢 Announcements will be sent to: ${serverType}`);
+  } catch (error) {
+    console.error('❌ Failed to initialize TikTok Live Service:', error);
+  }
+} else {
+  console.log('ℹ️ TikTok Live Service not initialized - missing environment variables');
+  if (!tiktokIdentifier) {
+    console.log('   Required (one of): TIKTOK_USER_ID (recommended) or TIKTOK_USERNAME');
+  }
+  if (!channelId) {
+    console.log(`   Required: ${isDev() ? 'TEST_LIVE_ANNOUNCEMENT_CHANNEL_ID' : 'LIVE_ANNOUNCEMENT_CHANNEL_ID'}`);
+  }
+}
 
 client.once('clientReady', async () => {
   if (client.user) {
@@ -93,6 +125,16 @@ client.once('clientReady', async () => {
   } catch (error) {
     console.error('Failed to register slash commands:', error);
   }
+
+  // Start TikTok Live monitoring
+  if (tiktokLiveService) {
+    try {
+      await tiktokLiveService.connect();
+      console.log('✅ TikTok Live monitoring started');
+    } catch (error) {
+      console.error('❌ Failed to start TikTok Live monitoring:', error);
+    }
+  }
 });
 
 sendRules(client);
@@ -103,6 +145,39 @@ messageReactionAdd(client);
 
 app.listen(apiPort, () => {
   console.log(`Bot API server listening on port ${apiPort}`);
+});
+
+// Graceful shutdown handling
+process.on('SIGINT', async () => {
+  console.log('🔄 Received SIGINT, shutting down gracefully...');
+  
+  if (tiktokLiveService) {
+    tiktokLiveService.disconnect();
+    console.log('🔌 TikTok Live Service disconnected');
+  }
+  
+  if (mongoClient) {
+    await mongoClient.close();
+    console.log('🗄️ MongoDB connection closed');
+  }
+  
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🔄 Received SIGTERM, shutting down gracefully...');
+  
+  if (tiktokLiveService) {
+    tiktokLiveService.disconnect();
+    console.log('🔌 TikTok Live Service disconnected');
+  }
+  
+  if (mongoClient) {
+    await mongoClient.close();
+    console.log('🗄️ MongoDB connection closed');
+  }
+  
+  process.exit(0);
 });
 
 client.login(process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN);
