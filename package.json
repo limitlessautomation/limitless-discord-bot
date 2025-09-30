@@ -8,7 +8,8 @@
     "start": "node index.js",
     "dev": "node index.js",
     "build": "echo 'No build step needed - JavaScript project'",
-    "test": "echo 'No tests configured'"
+    "test": "echo 'No tests configured'",
+    "test-tiktok": "node test-tiktok-username.js"
   },
   "keywords": [],
   "author": "",
