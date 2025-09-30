@@ -57,7 +57,7 @@ const mongoClient = new MongoClient(mongoUri);
 
 // Initialize TikTok Live Service
 let tiktokLiveService = null;
-const tiktokIdentifier = environment.tiktok.userId || environment.tiktok.username;
+const tiktokIdentifier = environment.tiktok.username;
 const channelId = environment.tiktok.liveAnnouncementChannelId;
 
 if (tiktokIdentifier && channelId) {
@@ -79,7 +79,7 @@ if (tiktokIdentifier && channelId) {
 } else {
   console.log('ℹ️ TikTok Live Service not initialized - missing environment variables');
   if (!tiktokIdentifier) {
-    console.log('   Required (one of): TIKTOK_USER_ID (recommended) or TIKTOK_USERNAME');
+    console.log('   Required: TIKTOK_USERNAME');
   }
   if (!channelId) {
     console.log(`   Required: ${isDev() ? 'TEST_LIVE_ANNOUNCEMENT_CHANNEL_ID' : 'LIVE_ANNOUNCEMENT_CHANNEL_ID'}`);

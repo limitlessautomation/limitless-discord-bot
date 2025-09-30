@@ -14,9 +14,8 @@ export class TikTokLiveService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     
-    // Determine if using user ID (numeric) or username (starts with @)
-    this.isUserId = !isNaN(tiktokIdentifier) && tiktokIdentifier.length > 5;
-    this.identifierType = this.isUserId ? 'User ID' : 'Username';
+    // Always using username
+    this.identifierType = 'Username';
   }
 
   async connect() {
